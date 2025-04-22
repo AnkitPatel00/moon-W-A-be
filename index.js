@@ -159,8 +159,9 @@ app.post("/api/tasks", async (req, res) => {
 
 app.get("/api/tasks", async (req, res) => {
 
-  const { team, owner, project, tags, status } = req.query
+  const { team, taskOwner, sortByDate, tags, taskStatus,projectId } = req.query
   const query = {}
+  const sortBy = {}
   
   if (team)
   {
@@ -168,32 +169,40 @@ app.get("/api/tasks", async (req, res) => {
     query.team =teamId
   }
   
-  if (owner)
+  if (taskOwner)
     {
-      const ownerId = await UserModel.findOne({ name: owner }).select("_id")
+      const ownerId = await UserModel.findOne({ name: taskOwner }).select("_id")
       query.owners = { $in: ownerId }
     }
-    
-  if (project)
-    {
-      const projectId = await ProjectModel.findOne({ name: project }).select("_id")
-      query.project =projectId
-    }
+
   
   if (tags)
     {
       query.tags = {$in:tags}
   }
   
-  if (status)
+  if (taskStatus)
     {
-      query.status = status
+      query.status = taskStatus
+  }
+  
+  if (projectId)
+    {
+      query.project = projectId
     }
   
   
+      
+  if (sortByDate)
+    {
+    sortBy.dueDate =
+      parseInt(sortByDate)
+  }
+
+  
   try {
 
-    const tasks = await TaskModel.find(query).populate({path:"owners",select:"-password"})
+    const tasks = await TaskModel.find(query).sort(sortBy).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
     
     res.status(200).json(tasks)
 
@@ -204,13 +213,33 @@ app.get("/api/tasks", async (req, res) => {
   }
 })
 
+
+//get task with ID
+
+app.get("/api/tasks/:taskId", async (req, res) => {
+
+  const  taskId = req.params.taskId
+
+  try {
+
+    const tasks = await TaskModel.findById(taskId).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
+    
+    res.status(200).json(tasks)
+
+  }
+  catch (error)
+  {
+     res.status(500).json({error:error.message || "internal server error"})
+  }
+})
+
+
 //update task
 
 app.post("/api/tasks/:id", async (req, res) => {
 const taskId = req.params.id
-  const { project, team, owners } = req.body
+  const { project, team, owners,status } = req.body
   try {
-
     if(!mongoose.isValidObjectId(project)) throw new Error(`${project} invalid Project objectId`)
     if (!mongoose.isValidObjectId(team)) throw new Error(`${team} invalid Team objectId`)
     
@@ -221,7 +250,8 @@ const taskId = req.params.id
 
     
     if(!isPojectExist) throw new Error(`${project} not Exist!`)
-    if(!isTeamExist) throw new Error(`${project} not Exist!`)
+    if (!isTeamExist) throw new Error(`${project} not Exist!`)
+    
     
     const updatedTask = await TaskModel.findByIdAndUpdate(taskId,req.body,{new:true})
 
@@ -232,6 +262,26 @@ const taskId = req.params.id
   catch (error)
   {
     if (error.name === "ValidationError")
+    {
+      res.status(400).json({error:Object.values(error.errors)[0].message})
+    }
+
+    res.status(500).json({error:error.message || "internal server error"})
+  }
+})
+
+
+//handle mark as Complete
+
+app.post('/api/tasks/complete/:id', async (req, res) => {
+  const taskId = req.params.id
+  try {
+    const updatedTask = await TaskModel.findByIdAndUpdate(taskId, req.body, { new: true }).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
+    res.status(201).json({updatedTask})
+  }
+  catch (error)
+  {
+if (error.name === "ValidationError")
     {
       res.status(400).json({error:Object.values(error.errors)[0].message})
     }
