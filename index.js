@@ -519,7 +519,7 @@ app.get("/api/report/last-week", async (req, res) => {
   sevendayAgoDate.setDate(sevendayAgoDate.getDate() - 7);
 
   try {
-    const tasks = await TaskModel.find({status:"Completed",closedAt:{$gte:sevendayAgoDate}})
+    const tasks = await TaskModel.find({status:"Completed",completedAt:{$gte:sevendayAgoDate}}).countDocuments()
     res.status(200).json({completedTask: tasks})
   }
   catch (error)
@@ -533,7 +533,7 @@ app.get("/api/report/last-week", async (req, res) => {
 app.get("/api/report/pending", async (req, res) => {
   try {
     const pendingTask = await TaskModel.find({ status: {$ne:"Completed"} }).select("timeToComplete")
-    res.status(200).json({"days-Left": pendingTask.reduce((acc,obj)=>acc+obj.timeToComplete,0)})
+    res.status(200).json({"daysLeft": pendingTask.reduce((acc,obj)=>acc+obj.timeToComplete,0)})
   }
   catch (error)
   {
@@ -566,8 +566,18 @@ app.get("/api/report/closed-tasks", async (req,res) => {
   
   try {
     const taskCount =await TaskModel.find({ status: "Completed",...query}).countDocuments()
-    console.log(taskCount )
   res.status(200).json({task:taskCount})
+  }
+  catch (error)
+  {
+     res.status(500).json({ error: "internal server error" })
+  }
+})
+
+app.get("/api/report/closed-tasks/teams", async(req,res) => {
+  try {
+     const closedByTeam =await TaskModel.find({ status: "Completed"}).populate({path:"team",populate:{path:"members"}})
+      res.status(200).json({team:closedByTeam})
   }
   catch (error)
   {
