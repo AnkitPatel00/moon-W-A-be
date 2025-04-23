@@ -362,16 +362,36 @@ res.status(500).json({error:error.message || "internal server error"})
   }
 })
 
-
 //create new team
 
 app.post("/api/teams", async (req, res) => {
 
   try {
     const newTeam = new TeamModel(req.body)
-    const savedTeam = await (await newTeam.save())
+    const savedTeam = await  newTeam.save()
 
     res.status(201).json({message:"new team created",newTeam:savedTeam})
+  }
+  catch (error)
+  {
+   
+    if(error.name === "ValidationError")
+    {
+       res.status(400).json({error:Object.values(error.errors)[0].message})
+      }
+      
+      res.status(500).json({error:error.message || "internal server error"})
+  }
+}) 
+
+//add new memeber to team
+
+app.post("/api/teams/member/:id", async (req, res) => {
+const teamId = req.params.id
+  try {
+    const teamWithNewMemeber = await TeamModel.findByIdAndUpdate(teamId,req.body,{new:true})
+
+    res.status(201).json({message:"new member added",team:teamWithNewMemeber})
   }
   catch (error)
   {
@@ -396,6 +416,26 @@ app.get("/api/teams", async(req,res) => {
     
     res.status(200).json(allTeams)
 
+  }
+  catch(error)
+  {
+res.status(500).json({error:error.message || "internal server error"})
+  }
+})
+
+
+//fetch team with Id
+
+app.get("/api/teams/:id", async (req, res) => {
+  
+const teamId = req.params.id
+
+  try {
+    const team = await TeamModel.findById(teamId).populate('members')
+    
+    if (!team) throw new Error("error in getting team")
+    
+    res.status(200).json(team)
   }
   catch(error)
   {
