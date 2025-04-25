@@ -214,11 +214,34 @@ app.get("/api/tasks", async (req, res) => {
 })
 
 
-//get task with ID
+//get task with projectId
 
-app.get("/api/tasks/:taskId", async (req, res) => {
+app.get("/api/tasks/:projectId", async (req, res) => {
 
-  const  taskId = req.params.taskId
+  const projectId = req.params.projectId
+
+
+  try {
+
+    const tasks = await TaskModel.find({project:projectId}).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
+    
+
+    res.status(200).json(tasks)
+
+  }
+  catch (error)
+  {
+     res.status(500).json({error:error.message || "internal server error"})
+  }
+})
+
+
+//get task with projectId
+
+app.get("/api/tasks/taskDetails/:taskId", async (req, res) => {
+
+  const taskId = req.params.taskId
+
 
   try {
 
@@ -232,6 +255,8 @@ app.get("/api/tasks/:taskId", async (req, res) => {
      res.status(500).json({error:error.message || "internal server error"})
   }
 })
+
+
 
 
 //update task
