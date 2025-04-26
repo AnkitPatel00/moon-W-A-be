@@ -13,7 +13,7 @@ const TagModel = require('./models/tags.model')
 
 const app = experss()
 app.use(experss.json())
-app.use(cors({origin:"*"}))
+app.use(cors({origin:"*",credentials:true}))
 
 
 
@@ -42,6 +42,12 @@ const jwt_middleware = (req,res,next) => {
 
 
 initializeDatabase()
+
+//home
+
+app.get("/",(req,res) => {
+  res.send("Welcome to Workasana Server.")
+})
 
 //user register
 
