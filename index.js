@@ -294,7 +294,7 @@ const taskId = req.params.id
     res.status(500).json({error:error.message || "internal server error"})
   }
 })
-
+<
 
 //handle mark as Complete
 
@@ -302,7 +302,7 @@ app.post('/api/tasks/complete/:id', async (req, res) => {
   const taskId = req.params.id
   try {
     const updatedTask = await TaskModel.findByIdAndUpdate(taskId, req.body, { new: true }).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
-    res.status(201).json({updatedTask})
+    res.status(201).json({message:"Task Updated Successfully",updatedTask})
   }
   catch (error)
   {
