@@ -16,8 +16,6 @@ app.use(experss.json())
 app.use(cors({origin:"*",credentials:true}))
 
 
-
-
 const jwt_middleware = (req,res,next) => {
   
   try {
@@ -196,19 +194,17 @@ app.get("/api/tasks", async (req, res) => {
     {
       query.project = projectId
     }
-  
-  
+
       
   if (sortByDate)
     {
     sortBy.dueDate =
       parseInt(sortByDate)
   }
-
   
   try {
 
-    const tasks = await TaskModel.find(query).sort(sortBy).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
+    const tasks = await TaskModel.find(query).select("_id name owners dueDate").sort(sortBy).populate([{ path: "owners", select: "name _id"},{path:"project",select:"name"}])
     
     res.status(200).json(tasks)
 
@@ -381,7 +377,7 @@ query.status = projectStatus
 
   try {
     
-    const allProjects = await ProjectModel.find(query)
+    const allProjects = await ProjectModel.find(query).select("_id name status description")
     
     if (!allProjects) throw new Error("error in getting projects")
     
@@ -441,7 +437,7 @@ const teamId = req.params.id
 app.get("/api/teams", async(req,res) => {
   try {
     
-    const allTeams = await TeamModel.find().populate('members')
+    const allTeams = await TeamModel.find().populate({path:'members',select:"_id name"})
     
     if (!allTeams) throw new Error("error in getting teams")
     
