@@ -112,7 +112,7 @@ app.post("/api/auth/login", async (req, res) => {
     
     const user ={_id:isUserExist._id,name:isUserExist.name,email:isUserExist.email}
    
-    const token = jwt.sign({ user }, JWT_KEY, { expiresIn: "2m" })
+    const token = jwt.sign({ user }, JWT_KEY, { expiresIn: "20s" })
     
     res.status(200).json({token})
 
