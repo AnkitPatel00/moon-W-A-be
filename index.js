@@ -112,7 +112,7 @@ app.post("/api/auth/login", async (req, res) => {
     
     const user ={_id:isUserExist._id,name:isUserExist.name,email:isUserExist.email}
    
-    const token = jwt.sign({ user }, JWT_KEY, { expiresIn: "24h" })
+    const token = jwt.sign({ user }, JWT_KEY, { expiresIn: "2m" })
     
     res.status(200).json({token})
 
@@ -226,7 +226,6 @@ app.get("/api/tasks/:projectId", async (req, res) => {
   try {
 
     const tasks = await TaskModel.find({project:projectId}).populate([{ path: "owners", select: "_id name" }])
-    
 
     res.status(200).json(tasks)
 
