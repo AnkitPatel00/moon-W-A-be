@@ -9,7 +9,7 @@ const taskSchema = new mongoose.Schema({
  dueDate:{type:String,required:true},
  timeToComplete: { type: Number,min:[1,"Time To Complete Must be More than 0"],max:[30,"Time To Complete Must be under 30"],required: [true,"time to complete is required"] },
  status: {type: String,enum: ['To Do', 'In Progress', 'Completed', 'Blocked'],message:"'Status must be either: To Do, In Progress, Completed, or Blocked'",default:'To Do'},
-completedAt:Date 
+completedAt:{type:Date}
 }, { timestamps: true });
 
 module.exports = mongoose.model('workasana-tasks', taskSchema);

@@ -112,7 +112,7 @@ app.post("/api/auth/login", async (req, res) => {
     
     const user ={_id:isUserExist._id,name:isUserExist.name,email:isUserExist.email}
    
-    const token = jwt.sign({ user }, JWT_KEY, { expiresIn: "20s" })
+    const token = jwt.sign({ user }, JWT_KEY, { expiresIn: "24h" })
     
     res.status(200).json({token})
 
@@ -125,7 +125,7 @@ app.post("/api/auth/login", async (req, res) => {
 
 
 //Create a new task.
-app.post("/api/tasks", async (req, res) => {
+app.post("/api/tasks",jwt_middleware,async (req, res) => {
   const { project, team, owners } = req.body
   try {
 
@@ -161,7 +161,7 @@ app.post("/api/tasks", async (req, res) => {
 
 //fetch tasks with filter
 
-app.get("/api/tasks", async (req, res) => {
+app.get("/api/tasks",jwt_middleware, async (req, res) => {
 
   const { team, taskOwner, sortByDate, tags, taskStatus,projectId } = req.query
   const query = {}
@@ -204,7 +204,7 @@ app.get("/api/tasks", async (req, res) => {
   
   try {
 
-    const tasks = await TaskModel.find(query).select("_id name owners dueDate").sort(sortBy).populate([{ path: "owners", select: "name _id"},{path:"project",select:"name"}])
+    const tasks = await TaskModel.find(query).select("_id name owners dueDate status").sort(sortBy).populate([{ path: "owners", select: "name _id"},{path:"project",select:"name"}])
     
     res.status(200).json(tasks)
 
@@ -218,7 +218,7 @@ app.get("/api/tasks", async (req, res) => {
 
 //get task with projectId
 
-app.get("/api/tasks/:projectId", async (req, res) => {
+app.get("/api/tasks/:projectId",jwt_middleware,async (req, res) => {
 
   const projectId = req.params.projectId
 
@@ -239,7 +239,7 @@ app.get("/api/tasks/:projectId", async (req, res) => {
 
 //get task with projectId
 
-app.get("/api/tasks/taskDetails/:taskId", async (req, res) => {
+app.get("/api/tasks/taskDetails/:taskId",jwt_middleware,async (req, res) => {
 
   const taskId = req.params.taskId
 
@@ -262,7 +262,7 @@ app.get("/api/tasks/taskDetails/:taskId", async (req, res) => {
 
 //update task
 
-app.post("/api/tasks/:id", async (req, res) => {
+app.post("/api/tasks/:id",jwt_middleware,async (req, res) => {
 const taskId = req.params.id
   const { project, team, owners,status } = req.body
   try {
@@ -299,7 +299,7 @@ const taskId = req.params.id
 
 //handle mark as Complete
 
-app.post('/api/tasks/complete/:id', async (req, res) => {
+app.post('/api/tasks/complete/:id',jwt_middleware,async (req, res) => {
   const taskId = req.params.id
   try {
     const updatedTask = await TaskModel.findByIdAndUpdate(taskId, req.body, { new: true }).populate([{ path: "owners", select: "-password" },{path:"project"},{path:"team"}])
@@ -318,7 +318,7 @@ if (error.name === "ValidationError")
 
 //delete task
 
-app.delete("/api/tasks/:id", async (req, res) => {
+app.delete("/api/tasks/:id",jwt_middleware,async (req, res) => {
   const taskId = req.params.id
   try {
     const deletedTask = await TaskModel.findByIdAndDelete(taskId)
@@ -337,7 +337,7 @@ app.delete("/api/tasks/:id", async (req, res) => {
 
 //create new project
 
-app.post("/api/projects", async (req, res) => {
+app.post("/api/projects",jwt_middleware,async (req, res) => {
 
   try {
     const newProject = new ProjectModel(req.body)
@@ -359,7 +359,7 @@ app.post("/api/projects", async (req, res) => {
 
 //fetch all project
 
-app.get("/api/projects", async (req, res) => {
+app.get("/api/projects",jwt_middleware,async (req, res) => {
   
   const { projectName,projectStatus } = req.query
 
@@ -390,7 +390,7 @@ res.status(500).json({error:error.message || "internal server error"})
 
 //create new team
 
-app.post("/api/teams", async (req, res) => {
+app.post("/api/teams",jwt_middleware,async (req, res) => {
 
   try {
     const newTeam = new TeamModel(req.body)
@@ -412,7 +412,7 @@ app.post("/api/teams", async (req, res) => {
 
 //add new memeber to team
 
-app.post("/api/teams/member/:id", async (req, res) => {
+app.post("/api/teams/member/:id",jwt_middleware,async (req, res) => {
 const teamId = req.params.id
   try {
     const teamWithNewMemeber = await TeamModel.findByIdAndUpdate(teamId,req.body,{new:true})
@@ -433,7 +433,7 @@ const teamId = req.params.id
 
 //fetch all team
 
-app.get("/api/teams", async(req,res) => {
+app.get("/api/teams",jwt_middleware,async(req,res) => {
   try {
     
     const allTeams = await TeamModel.find().populate({path:'members',select:"_id name"})
@@ -452,7 +452,7 @@ res.status(500).json({error:error.message || "internal server error"})
 
 //fetch team with Id
 
-app.get("/api/teams/:id", async (req, res) => {
+app.get("/api/teams/:id",jwt_middleware,async(req, res) => {
   
 const teamId = req.params.id
 
@@ -538,7 +538,7 @@ app.get("/api/tags", async(req,res) => {
 
 //tasks completed in the last week
 
-app.get("/api/report/last-week", async (req, res) => {
+app.get("/api/report/last-week",jwt_middleware,async (req, res) => {
   
   const sevendayAgoDate = new Date()
     
@@ -556,7 +556,7 @@ app.get("/api/report/last-week", async (req, res) => {
 
 //  total days of work pending
 
-app.get("/api/report/pending", async (req, res) => {
+app.get("/api/report/pending",jwt_middleware,async (req, res) => {
   try {
     const pendingTask = await TaskModel.find({ status: {$ne:"Completed"} }).select("timeToComplete")
     res.status(200).json({"daysLeft": pendingTask.reduce((acc,obj)=>acc+obj.timeToComplete,0)})
@@ -569,7 +569,7 @@ app.get("/api/report/pending", async (req, res) => {
 
 //number of tasks closed by team, owner, or project
 
-app.get("/api/report/closed-tasks", async (req,res) => {
+app.get("/api/report/closed-tasks",jwt_middleware,async (req,res) => {
   const {team,project,owner} = req.query
   const query = {}
   if (team)
@@ -600,7 +600,7 @@ app.get("/api/report/closed-tasks", async (req,res) => {
   }
 })
 
-app.get("/api/report/closed-tasks/teams", async(req,res) => {
+app.get("/api/report/closed-tasks/teams",jwt_middleware,async(req,res) => {
   try {
      const closedByTeam =await TaskModel.find({ status: "Completed"}).populate({path:"team",populate:{path:"members"}})
       res.status(200).json({team:closedByTeam})
